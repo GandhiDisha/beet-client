@@ -2,10 +2,12 @@ package in.ashnehete.beetclient.db.dao;
 
 import java.util.List;
 
+import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
 import in.ashnehete.beetclient.db.entities.Checkpoint;
 
+@Dao
 public interface CheckpointDao {
     @Query("SELECT * FROM checkpoint")
     List<Checkpoint> getAll();
