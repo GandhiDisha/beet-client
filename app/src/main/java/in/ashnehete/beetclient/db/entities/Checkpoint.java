@@ -1,12 +1,13 @@
 package in.ashnehete.beetclient.db.entities;
 
+import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity
 public class Checkpoint {
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
     public int id;
 
     @ColumnInfo(name = "route_id")
@@ -23,4 +24,14 @@ public class Checkpoint {
 
     @ColumnInfo(name = "longitude")
     public double longitude;
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "Id: " + id + "\n" +
+                "RouteId: " + routeId + "\n" +
+                "Checkpoint: " + checkpoint + "\n" +
+                "Latitude: " + latitude + "\n" +
+                "Longitude: " + longitude;
+    }
 }

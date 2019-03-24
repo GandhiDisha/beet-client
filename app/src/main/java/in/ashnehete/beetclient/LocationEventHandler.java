@@ -1,6 +1,6 @@
 package in.ashnehete.beetclient;
 
-import android.content.Context;
+import android.util.Base64;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -9,14 +9,16 @@ import com.star_zero.sse.MessageEvent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.lifecycle.LiveData;
+import in.ashnehete.beetclient.db.entities.Checkpoint;
 import in.ashnehete.beetclient.models.CurrentLocation;
 
 public class LocationEventHandler implements EventHandler {
-    private Context mContext;
+    private MapsActivity context;
     public static final String TAG = "LocationEventHandler";
 
-    public LocationEventHandler(Context mContext) {
-        this.mContext = mContext;
+    public LocationEventHandler(MapsActivity context) {
+        this.context = context;
     }
 
     @Override
@@ -26,8 +28,20 @@ public class LocationEventHandler implements EventHandler {
 
     @Override
     public void onMessage(@NonNull MessageEvent event) {
-        CurrentLocation currentLocation = new Gson().fromJson(event.getData(), CurrentLocation.class);
+        byte[] decodedBytes = Base64.decode(event.getData(), Base64.DEFAULT);
+        String json = new String(decodedBytes);
+        CurrentLocation currentLocation = new Gson().fromJson(json, CurrentLocation.class);
         Log.d(TAG, currentLocation.toString());
+
+        // Get Location from db/server
+        RouteRepository routeRepository = new RouteRepository(context.getApplicationContext());
+        final LiveData<Checkpoint> checkpoint = routeRepository.getCheckpoint(currentLocation);
+        context.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                context.updateLocation(checkpoint);
+            }
+        });
     }
 
     @Override

@@ -6,7 +6,7 @@ import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
 
-public interface BeetService {
+public interface RouteService {
     @GET("routes")
     Call<List<Route>> getAllRoutes();
 
