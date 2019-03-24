@@ -65,7 +65,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Log.d(TAG, checkpoint.toString());
                     LatLng latLng = new LatLng(checkpoint.latitude, checkpoint.longitude);
                     map.addMarker(new MarkerOptions().position(latLng).title("Marker"));
-                    map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
                 } else {
                     Log.d(TAG, "onChange: checkpoint == null");
                 }
