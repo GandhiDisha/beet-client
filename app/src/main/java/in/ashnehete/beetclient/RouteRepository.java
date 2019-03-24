@@ -91,19 +91,25 @@ public class RouteRepository {
         }.start();
     }
 
-    public Map<String, Route> getAllRoutes() {
+    public List<Route> getAllRoutes() {
         List<Checkpoint> checkpoints = checkpointDao.getAll();
-        Map<String, Route> routes = new HashMap<>();
+        Map<String, Route> routeMap = new HashMap<>();
 
         for (Checkpoint c : checkpoints) {
-            if (routes.containsKey(c.routeId)) {
-                routes.get(c.routeId).addCheckpoint(c.checkpoint, c.latitude, c.longitude);
+            if (routeMap.containsKey(c.routeId)) {
+                routeMap.get(c.routeId).addCheckpoint(c.checkpoint, c.latitude, c.longitude);
             } else {
                 Route route = new Route(c.routeId, c.routeName);
                 route.addCheckpoint(c.checkpoint, c.latitude, c.longitude);
-                routes.put(c.routeId, route);
+                routeMap.put(c.routeId, route);
             }
         }
+
+        List<Route> routes = new ArrayList<>(routeMap.size());
+        for (Map.Entry<String, Route> entry : routeMap.entrySet()) {
+            routes.add(entry.getValue());
+        }
+
         return routes;
     }
 

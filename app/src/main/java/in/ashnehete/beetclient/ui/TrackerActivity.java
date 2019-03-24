@@ -10,9 +10,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import androidx.appcompat.app.AppCompatActivity;
 import in.ashnehete.beetclient.R;
@@ -30,11 +28,11 @@ public class TrackerActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tracker);
 
-        spnRoutes = (Spinner) findViewById(R.id.spnRoutes);
+        spnRoutes = findViewById(R.id.spnRoutes);
 
         routeRepository = new RouteRepository(this);
 
-        final ArrayAdapter<String> routesAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, android.R.id.text1);
+        final ArrayAdapter<Route> routesAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, android.R.id.text1);
         routesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spnRoutes.setAdapter(routesAdapter);
         spnRoutes.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -42,6 +40,7 @@ public class TrackerActivity extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String item = parent.getItemAtPosition(position).toString();
                 Log.d(TAG, "Selected: " + item);
+
             }
 
             @Override
@@ -53,19 +52,10 @@ public class TrackerActivity extends AppCompatActivity {
         new Thread((new Runnable() {
             @Override
             public void run() {
-                Map<String, Route> routeMap = routeRepository.getAllRoutes();
-                List<String> routeNames = getRouteNames(routeMap);
-                routesAdapter.addAll(routeNames);
+                List<Route> routes = routeRepository.getAllRoutes();
+                routesAdapter.addAll(routes);
             }
         })).start();
-    }
-
-    private List<String> getRouteNames(Map<String, Route> routeMap) {
-        List<String> routeNames = new ArrayList<>(routeMap.size());
-        for (Map.Entry<String, Route> entry : routeMap.entrySet()) {
-            routeNames.add(entry.getValue().getName());
-        }
-        return routeNames;
     }
 
     @Override

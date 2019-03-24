@@ -55,13 +55,7 @@ public class Route {
     @NonNull
     @Override
     public String toString() {
-        String str = "Id: " + id + "\n" +
-                "Name: " + name + "\n" +
-                "Checkpoints:\n";
-        for (Checkpoint checkpoint : checkpoints) {
-            str += checkpoint.toString();
-        }
-        return str;
+        return name;
     }
 
     public class Checkpoint {

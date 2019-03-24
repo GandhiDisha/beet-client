@@ -18,8 +18,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnTrackOnMap = (Button) findViewById(R.id.btnTrackOnMap);
-        btnGpsTracker = (Button) findViewById(R.id.btnGpsTracker);
+        btnTrackOnMap = findViewById(R.id.btnTrackOnMap);
+        btnGpsTracker = findViewById(R.id.btnGpsTracker);
 
         btnTrackOnMap.setOnClickListener(new View.OnClickListener() {
             @Override
