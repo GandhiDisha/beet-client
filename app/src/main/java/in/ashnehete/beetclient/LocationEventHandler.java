@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import in.ashnehete.beetclient.db.entities.Checkpoint;
 import in.ashnehete.beetclient.models.CurrentLocation;
+import in.ashnehete.beetclient.ui.MapsActivity;
 
 public class LocationEventHandler implements EventHandler {
     private MapsActivity context;

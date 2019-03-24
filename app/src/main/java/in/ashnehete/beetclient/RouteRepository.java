@@ -3,7 +3,9 @@ package in.ashnehete.beetclient;
 import android.content.Context;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import androidx.lifecycle.LiveData;
 import in.ashnehete.beetclient.db.AppDatabase;
@@ -87,5 +89,40 @@ public class RouteRepository {
                 checkpointDao.insertAll(finalTemp);
             }
         }.start();
+    }
+
+    public Map<String, Route> getAllRoutes() {
+        List<Checkpoint> checkpoints = checkpointDao.getAll();
+        Map<String, Route> routes = new HashMap<>();
+
+        for (Checkpoint c : checkpoints) {
+            if (routes.containsKey(c.routeId)) {
+                routes.get(c.routeId).addCheckpoint(c.checkpoint, c.latitude, c.longitude);
+            } else {
+                Route route = new Route(c.routeId, c.routeName);
+                route.addCheckpoint(c.checkpoint, c.latitude, c.longitude);
+                routes.put(c.routeId, route);
+            }
+        }
+        return routes;
+    }
+
+    public void refreshRoutes() {
+        Call<List<Route>> routeCall = routeService.getAllRoutes();
+        routeCall.enqueue(new Callback<List<Route>>() {
+            @Override
+            public void onResponse(Call<List<Route>> call, Response<List<Route>> response) {
+                List<Route> routes = response.body();
+                for (Route r :
+                        routes) {
+                    insertCheckpoints(r);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Route>> call, Throwable t) {
+                // TODO: Failure
+            }
+        });
     }
 }

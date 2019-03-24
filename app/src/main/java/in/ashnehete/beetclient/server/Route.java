@@ -2,6 +2,7 @@ package in.ashnehete.beetclient.server;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -16,6 +17,10 @@ public class Route {
         this.id = id;
         this.name = name;
         this.checkpoints = checkpoints;
+    }
+
+    public Route(String id, String name) {
+        this(id, name, new ArrayList<Checkpoint>());
     }
 
     public String getId() {
@@ -40,6 +45,11 @@ public class Route {
 
     public void setCheckpoints(List<Checkpoint> checkpoints) {
         this.checkpoints = checkpoints;
+    }
+
+    public void addCheckpoint(int id, double latitude, double longitude) {
+        Checkpoint checkpoint = new Checkpoint(id, latitude, longitude);
+        this.checkpoints.add(checkpoint);
     }
 
     @NonNull

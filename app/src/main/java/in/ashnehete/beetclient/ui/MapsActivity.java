@@ -1,4 +1,4 @@
-package in.ashnehete.beetclient;
+package in.ashnehete.beetclient.ui;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -14,6 +14,8 @@ import com.star_zero.sse.EventSource;
 import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
+import in.ashnehete.beetclient.LocationEventHandler;
+import in.ashnehete.beetclient.R;
 import in.ashnehete.beetclient.db.entities.Checkpoint;
 
 import static in.ashnehete.beetclient.AppConstants.SSE_URL;
