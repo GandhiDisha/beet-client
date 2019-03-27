@@ -1,5 +1,10 @@
 package in.ashnehete.beetclient.ui;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -13,32 +18,33 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
+import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingClient;
+import com.google.android.gms.location.GeofencingRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
-import org.eclipse.paho.client.mqttv3.DisconnectedBufferOptions;
-import org.eclipse.paho.client.mqttv3.IMqttActionListener;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.IMqttToken;
-import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import in.ashnehete.beetclient.GeofenceBroadcastReceiver;
 import in.ashnehete.beetclient.R;
 import in.ashnehete.beetclient.RouteRepository;
-import in.ashnehete.beetclient.models.MqttCheckpoint;
 import in.ashnehete.beetclient.server.Route;
 
-import static in.ashnehete.beetclient.AppConstants.CLIENT_ID;
-import static in.ashnehete.beetclient.AppConstants.MQTT_URL;
+import static in.ashnehete.beetclient.AppConstants.GEOFENCE_EXPIRATION_IN_MILLIS;
+import static in.ashnehete.beetclient.AppConstants.GEOFENCE_RADIUS_IN_METERS;
 
 public class TrackerActivity extends AppCompatActivity {
 
     public static final String TAG = "TrackerActivity";
+    private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
 
     Spinner spnRoutes;
     Button btnStart;
@@ -46,7 +52,9 @@ public class TrackerActivity extends AppCompatActivity {
 
     RouteRepository routeRepository;
     MqttAndroidClient mqttAndroidClient;
-    Gson gson;
+    GeofencingClient geofencingClient;
+    List<Geofence> geofences;
+    PendingIntent pendingIntent;
 
     Route selectedRoute;
     String topic = "test";
@@ -61,8 +69,8 @@ public class TrackerActivity extends AppCompatActivity {
         tvConsole = findViewById(R.id.tvConsole);
 
         routeRepository = new RouteRepository(this);
-        mqttAndroidClient = new MqttAndroidClient(getApplicationContext(), MQTT_URL, CLIENT_ID);
-        initMqtt();
+        geofencingClient = LocationServices.getGeofencingClient(this);
+
 
         final ArrayAdapter<Route> routesAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, android.R.id.text1);
         routesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -97,116 +105,89 @@ public class TrackerActivity extends AppCompatActivity {
                 }
                 spnRoutes.setEnabled(false);
                 btnStart.setEnabled(false);
-                connectMqtt();
+                // connectMqtt();
+                addGeofences();
             }
         });
     }
 
-    private void initMqtt() {
-        mqttAndroidClient.setCallback(new MqttCallbackExtended() {
-            @Override
-            public void connectComplete(boolean reconnect, String serverURI) {
-                if (reconnect) {
-                    console("Reconnected: " + serverURI);
-                } else {
-                    console("Connected: " + serverURI);
-                }
-            }
-
-            @Override
-            public void connectionLost(Throwable cause) {
-                console("Connection Lost");
-            }
-
-            @Override
-            public void messageArrived(String topic, MqttMessage message) throws Exception {
-                console("Incoming message (" + topic + "): " + new String(message.getPayload()));
-            }
-
-            @Override
-            public void deliveryComplete(IMqttDeliveryToken token) {
-                try {
-                    console("Delivery: " + token.getMessage());
-                } catch (MqttException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
-    public void connectMqtt() {
-        MqttConnectOptions options = new MqttConnectOptions();
-        options.setAutomaticReconnect(true);
-        options.setCleanSession(false);
-        try {
-            mqttAndroidClient.connect(options, null, new IMqttActionListener() {
-                @Override
-                public void onSuccess(IMqttToken asyncActionToken) {
-                    DisconnectedBufferOptions disconnectedBufferOptions = new DisconnectedBufferOptions();
-                    disconnectedBufferOptions.setBufferEnabled(true);
-                    disconnectedBufferOptions.setBufferSize(100);
-                    disconnectedBufferOptions.setPersistBuffer(false);
-                    disconnectedBufferOptions.setDeleteOldestMessages(false);
-                    mqttAndroidClient.setBufferOpts(disconnectedBufferOptions);
-//                    subscribeToTopic();
-
-                    final List<Route.Checkpoint> checkpoints = selectedRoute.getCheckpoints();
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            for (Route.Checkpoint c : checkpoints) {
-                                Log.d(TAG, c.toString());
-                                MqttCheckpoint mqttCheckpoint = new MqttCheckpoint(selectedRoute.getId(), c.getId());
-                                String msg = new Gson().toJson(mqttCheckpoint);
-                                Log.d(TAG, "JSON: " + msg);
-                                publishMessage(topic, msg);
-                                try {
-                                    Thread.sleep(2000);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                    }).start();
-                }
-
-                @Override
-                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    console("Failed to connect to: " + MQTT_URL);
-                }
-            });
-        } catch (MqttException e) {
-            e.printStackTrace();
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (!checkPermissions()) {
+            requestPermissions();
         }
     }
 
-    private void subscribeToTopic() {
-        try {
-            mqttAndroidClient.subscribe(topic, 0, null, new IMqttActionListener() {
-                @Override
-                public void onSuccess(IMqttToken asyncActionToken) {
-                    console("Subscribed (" + topic + ")");
-                }
-
-                @Override
-                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    console("Failed to subscribe (" + topic + ")");
-                }
-            });
-        } catch (MqttException e) {
-            e.printStackTrace();
-        }
+    @SuppressLint("MissingPermission")
+    private void addGeofences() {
+        geofences = getGeofencesList(selectedRoute);
+        geofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
+                .addOnSuccessListener(this, new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d(TAG, "Geofences added");
+                    }
+                })
+                .addOnFailureListener(this, new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d(TAG, "Geofences failed to add");
+                    }
+                });
     }
 
-    private void publishMessage(String topic, String msg) {
-        try {
-            MqttMessage message = new MqttMessage();
-            message.setPayload(msg.getBytes());
-            mqttAndroidClient.publish(topic, message);
-            console("Published (" + topic + ": " + msg);
-        } catch (MqttException e) {
-            e.printStackTrace();
+    private GeofencingRequest getGeofencingRequest() {
+        GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
+        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
+        builder.addGeofences(geofences);
+        return builder.build();
+    }
+
+    private PendingIntent getGeofencePendingIntent() {
+        if (pendingIntent != null) {
+            return pendingIntent;
         }
+        Intent intent = new Intent(this, GeofenceBroadcastReceiver.class);
+        pendingIntent = PendingIntent.getBroadcast(this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+        return pendingIntent;
+    }
+
+    private List<Geofence> getGeofencesList(Route route) {
+        List<Geofence> geofences = new ArrayList<>();
+        List<Route.Checkpoint> checkpoints = route.getCheckpoints();
+        for (Route.Checkpoint c : checkpoints) {
+            String requestId = route.getId() + ":" + c.getId();
+            geofences.add(new Geofence.Builder()
+                    .setRequestId(requestId)
+                    .setCircularRegion(
+                            c.getLatitude(),
+                            c.getLongitude(),
+                            GEOFENCE_RADIUS_IN_METERS)
+                    .setExpirationDuration(GEOFENCE_EXPIRATION_IN_MILLIS)
+                    .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                    .build()
+            );
+            console(requestId + ":" + c.getLatitude() + "," + c.getLongitude());
+        }
+        return geofences;
+    }
+
+    private boolean checkPermissions() {
+        int permissionState = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION);
+        return permissionState == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestPermissions() {
+        Log.i(TAG, "Requesting permission");
+        // Request permission. It's possible this can be auto answered if device policy
+        // sets the permission in a given state or the user denied the permission
+        // previously and checked "Never ask again".
+        ActivityCompat.requestPermissions(TrackerActivity.this,
+                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                REQUEST_PERMISSIONS_REQUEST_CODE);
     }
 
     private void console(String msg) {
@@ -225,6 +206,7 @@ public class TrackerActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.menu_refresh:
                 routeRepository.refreshRoutes();
+                finish();
                 break;
         }
         return super.onOptionsItemSelected(item);
