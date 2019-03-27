@@ -1,4 +1,4 @@
-package in.ashnehete.beetclient;
+package in.ashnehete.beetclient.sse;
 
 import android.util.Base64;
 import android.util.Log;
@@ -10,6 +10,7 @@ import com.star_zero.sse.MessageEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
+import in.ashnehete.beetclient.RouteRepository;
 import in.ashnehete.beetclient.db.entities.Checkpoint;
 import in.ashnehete.beetclient.models.CurrentLocation;
 import in.ashnehete.beetclient.ui.MapsActivity;
