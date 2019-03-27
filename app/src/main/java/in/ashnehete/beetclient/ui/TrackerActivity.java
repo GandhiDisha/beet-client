@@ -22,8 +22,10 @@ import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 
@@ -117,6 +119,17 @@ public class TrackerActivity extends AppCompatActivity {
         if (!checkPermissions()) {
             requestPermissions();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        geofencingClient.removeGeofences(getGeofencePendingIntent()).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                Log.d(TAG, "Geofences removed");
+            }
+        });
     }
 
     @SuppressLint("MissingPermission")
