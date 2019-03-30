@@ -1,7 +1,7 @@
 package in.ashnehete.beetclient;
 
 public class AppConstants {
-    public static final String IP = "192.168.1.6";
+    public static final String IP = "192.168.43.239";
     public static final String SSE_URL = "http://" + IP + ":6917/test";
     public static final String SERVER_URL = "http://" + IP + ":3000/";
     public static final String MQTT_URL = "tcp://" + IP + ":1883";

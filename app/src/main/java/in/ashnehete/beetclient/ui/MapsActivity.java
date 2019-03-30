@@ -8,6 +8,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.star_zero.sse.EventSource;
 
@@ -25,6 +26,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public static final String TAG = "MapsActivity";
     private EventSource eventSource;
     private GoogleMap map;
+    private Marker lastMarker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,10 +66,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onChanged(Checkpoint checkpoint) {
                 if (checkpoint != null) {
+                    if (lastMarker != null) lastMarker.remove();
                     Log.d(TAG, checkpoint.toString());
                     LatLng latLng = new LatLng(checkpoint.latitude, checkpoint.longitude);
-                    map.addMarker(new MarkerOptions().position(latLng).title("Marker"));
+                    Marker marker = map.addMarker(new MarkerOptions().position(latLng).title("Marker"));
                     map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+                    lastMarker = marker;
                 } else {
                     Log.d(TAG, "onChange: checkpoint == null");
                 }
