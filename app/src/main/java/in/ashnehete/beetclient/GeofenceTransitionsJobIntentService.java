@@ -18,9 +18,7 @@ import com.google.gson.Gson;
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.DisconnectedBufferOptions;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
-import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -33,7 +31,6 @@ import androidx.core.app.NotificationCompat;
 import in.ashnehete.beetclient.models.MqttCheckpoint;
 import in.ashnehete.beetclient.ui.MainActivity;
 
-import static in.ashnehete.beetclient.AppConstants.CLIENT_ID;
 import static in.ashnehete.beetclient.AppConstants.MQTT_URL;
 import static in.ashnehete.beetclient.AppConstants.TOPIC;
 
@@ -58,15 +55,15 @@ public class GeofenceTransitionsJobIntentService extends JobIntentService {
 
     @Override
     protected void onHandleWork(@NonNull Intent intent) {
-        mqttAndroidClient = new MqttAndroidClient(getApplicationContext(), MQTT_URL, CLIENT_ID);
-        initMqtt();
+        Log.d(TAG, "Geofence triggered");
+        mqttAndroidClient = MqttHelper.getInstance(getApplicationContext()).getMqttAndroidClient();
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
 
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
             List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
             for (Geofence g : triggeringGeofences) {
-                sendNotification(g.getRequestId());
+//                sendNotification(g.getRequestId());
                 sendMqttMessage(g.getRequestId());
             }
         }
@@ -76,42 +73,6 @@ public class GeofenceTransitionsJobIntentService extends JobIntentService {
     private void sendMqttMessage(String requestId) {
         String[] params = requestId.split(":");
         connectMqtt(params[0], params[1]);
-    }
-
-    private void console(String msg) {
-        Log.d(TAG, msg);
-    }
-
-    private void initMqtt() {
-        mqttAndroidClient.setCallback(new MqttCallbackExtended() {
-            @Override
-            public void connectComplete(boolean reconnect, String serverURI) {
-                if (reconnect) {
-                    console("Reconnected: " + serverURI);
-                } else {
-                    console("Connected: " + serverURI);
-                }
-            }
-
-            @Override
-            public void connectionLost(Throwable cause) {
-                console("Connection Lost");
-            }
-
-            @Override
-            public void messageArrived(String topic, MqttMessage message) throws Exception {
-                console("Incoming message (" + topic + "): " + new String(message.getPayload()));
-            }
-
-            @Override
-            public void deliveryComplete(IMqttDeliveryToken token) {
-                try {
-                    console("Delivery: " + token.getMessage());
-                } catch (MqttException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
     }
 
     public void connectMqtt(final String routeId, final String checkpoint) {
@@ -136,7 +97,7 @@ public class GeofenceTransitionsJobIntentService extends JobIntentService {
 
                 @Override
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    console("Failed to connect to: " + MQTT_URL);
+                    Log.d(TAG, "Failed to connect to: " + MQTT_URL);
                 }
             });
         } catch (MqttException e) {
@@ -149,7 +110,7 @@ public class GeofenceTransitionsJobIntentService extends JobIntentService {
             MqttMessage message = new MqttMessage();
             message.setPayload(msg.getBytes());
             mqttAndroidClient.publish(topic, message);
-            console("Published (" + topic + ": " + msg);
+            Log.d(TAG, "Published (" + topic + ": " + msg);
         } catch (MqttException e) {
             e.printStackTrace();
         }

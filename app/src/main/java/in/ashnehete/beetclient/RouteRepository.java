@@ -50,15 +50,18 @@ public class RouteRepository {
     }
 
     public void refreshCheckpoint(CurrentLocation currentLocation) {
-        int numberOfCheckpoints = checkpointDao.getNumberOfCheckpoints(currentLocation.getRouteId());
-        // Fetch from server if route doesn't exist in local db
-        if (numberOfCheckpoints == 0) {
+        if (!exists(currentLocation.getRouteId())) {
             Call<Route> routeCall = routeService.getRoute(currentLocation.getRouteId());
             routeCall.enqueue(new Callback<Route>() {
                 @Override
                 public void onResponse(Call<Route> call, Response<Route> response) {
-                    Route route = response.body();
-                    insertCheckpoints(route);
+                    final Route route = response.body();
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            insertCheckpoints(route);
+                        }
+                    }.start();
                 }
 
                 @Override
@@ -83,12 +86,7 @@ public class RouteRepository {
         }
         Checkpoint[] temp = new Checkpoint[checkpoints.size()];
         temp = checkpoints.toArray(temp);
-        final Checkpoint[] finalTemp = temp;
-        new Thread() {
-            public void run() {
-                checkpointDao.insertAll(finalTemp);
-            }
-        }.start();
+        checkpointDao.insertAll(temp);
     }
 
     public List<Route> getAllRoutes() {
@@ -119,9 +117,16 @@ public class RouteRepository {
             @Override
             public void onResponse(Call<List<Route>> call, Response<List<Route>> response) {
                 List<Route> routes = response.body();
-                for (Route r :
-                        routes) {
-                    insertCheckpoints(r);
+                for (final Route route : routes) {
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            // Only insert if route doesn't exist locally
+                            if (!exists(route.getId())) {
+                                insertCheckpoints(route);
+                            }
+                        }
+                    }.start();
                 }
             }
 
@@ -130,5 +135,15 @@ public class RouteRepository {
                 // TODO: Failure
             }
         });
+    }
+
+    /**
+     * Checks whether a route exists in the database or not
+     *
+     * @param routeId Route ID
+     * @return true if checkpoints exist of given route id, otherwise false
+     */
+    public boolean exists(String routeId) {
+        return checkpointDao.getNumberOfCheckpoints(routeId) > 0;
     }
 }

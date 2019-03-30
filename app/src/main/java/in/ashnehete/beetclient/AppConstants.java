@@ -9,4 +9,5 @@ public class AppConstants {
     public static final float GEOFENCE_RADIUS_IN_METERS = 50;
     public static final long GEOFENCE_EXPIRATION_IN_MILLIS = 12 * 60 * 60 * 1000; // 12 hours
     public static final String TOPIC = "test";
+    public static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
 }

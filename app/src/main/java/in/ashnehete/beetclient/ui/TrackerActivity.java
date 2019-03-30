@@ -22,12 +22,8 @@ import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-
-import org.eclipse.paho.android.service.MqttAndroidClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,24 +38,22 @@ import in.ashnehete.beetclient.server.Route;
 
 import static in.ashnehete.beetclient.AppConstants.GEOFENCE_EXPIRATION_IN_MILLIS;
 import static in.ashnehete.beetclient.AppConstants.GEOFENCE_RADIUS_IN_METERS;
+import static in.ashnehete.beetclient.AppConstants.REQUEST_PERMISSIONS_REQUEST_CODE;
 
 public class TrackerActivity extends AppCompatActivity {
 
     public static final String TAG = "TrackerActivity";
-    private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
 
     Spinner spnRoutes;
     Button btnStart;
     TextView tvConsole;
 
     RouteRepository routeRepository;
-    MqttAndroidClient mqttAndroidClient;
     GeofencingClient geofencingClient;
     List<Geofence> geofences;
     PendingIntent pendingIntent;
 
     Route selectedRoute;
-    String topic = "test";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,7 +101,6 @@ public class TrackerActivity extends AppCompatActivity {
                 }
                 spnRoutes.setEnabled(false);
                 btnStart.setEnabled(false);
-                // connectMqtt();
                 addGeofences();
             }
         });
@@ -124,12 +117,19 @@ public class TrackerActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        geofencingClient.removeGeofences(getGeofencePendingIntent()).addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                Log.d(TAG, "Geofences removed");
-            }
-        });
+        geofencingClient.removeGeofences(getGeofencePendingIntent())
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d(TAG, "Geofences remove success");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d(TAG, "Geofences remove failure");
+                    }
+                });
     }
 
     @SuppressLint("MissingPermission")
@@ -205,6 +205,7 @@ public class TrackerActivity extends AppCompatActivity {
 
     private void console(String msg) {
         tvConsole.append(msg + "\n");
+        Log.d(TAG, msg);
     }
 
     @Override
