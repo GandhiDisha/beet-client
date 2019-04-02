@@ -1,5 +1,6 @@
 package in.ashnehete.beetclient.ui;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -10,6 +11,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.star_zero.sse.EventSource;
 
 import androidx.fragment.app.FragmentActivity;
@@ -70,6 +72,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Log.d(TAG, checkpoint.toString());
                     LatLng latLng = new LatLng(checkpoint.latitude, checkpoint.longitude);
                     Marker marker = map.addMarker(new MarkerOptions().position(latLng).title("Marker"));
+                    map.addPolyline(new PolylineOptions()
+                            .add(lastMarker.getPosition(), latLng)
+                            .width(5)
+                            .color(Color.argb(128, 0, 0, 0))
+                    );
                     map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
                     lastMarker = marker;
                 } else {
