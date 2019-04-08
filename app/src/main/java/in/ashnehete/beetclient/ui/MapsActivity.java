@@ -68,15 +68,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onChanged(Checkpoint checkpoint) {
                 if (checkpoint != null) {
-                    if (lastMarker != null) lastMarker.remove();
                     Log.d(TAG, checkpoint.toString());
                     LatLng latLng = new LatLng(checkpoint.latitude, checkpoint.longitude);
                     Marker marker = map.addMarker(new MarkerOptions().position(latLng).title("Marker"));
-                    map.addPolyline(new PolylineOptions()
-                            .add(lastMarker.getPosition(), latLng)
-                            .width(5)
-                            .color(Color.argb(128, 0, 0, 0))
-                    );
+
+                    if (lastMarker != null) {
+                        map.addPolyline(new PolylineOptions()
+                                .add(lastMarker.getPosition(), latLng)
+                                .width(5)
+                                .color(Color.argb(128, 0, 0, 0))
+                        );
+                        lastMarker.remove();
+                    }
+
                     map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
                     lastMarker = marker;
                 } else {
