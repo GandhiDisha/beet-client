@@ -16,7 +16,6 @@ import com.google.android.gms.location.GeofencingEvent;
 import com.google.gson.Gson;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
-import org.eclipse.paho.client.mqttv3.DisconnectedBufferOptions;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
@@ -83,12 +82,12 @@ public class GeofenceTransitionsJobIntentService extends JobIntentService {
             mqttAndroidClient.connect(options, null, new IMqttActionListener() {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
-                    DisconnectedBufferOptions disconnectedBufferOptions = new DisconnectedBufferOptions();
-                    disconnectedBufferOptions.setBufferEnabled(true);
-                    disconnectedBufferOptions.setBufferSize(100);
-                    disconnectedBufferOptions.setPersistBuffer(false);
-                    disconnectedBufferOptions.setDeleteOldestMessages(false);
-                    mqttAndroidClient.setBufferOpts(disconnectedBufferOptions);
+//                    DisconnectedBufferOptions disconnectedBufferOptions = new DisconnectedBufferOptions();
+//                    disconnectedBufferOptions.setBufferEnabled(true);
+//                    disconnectedBufferOptions.setBufferSize(100);
+//                    disconnectedBufferOptions.setPersistBuffer(false);
+//                    disconnectedBufferOptions.setDeleteOldestMessages(false);
+//                    mqttAndroidClient.setBufferOpts(disconnectedBufferOptions);
 
                     MqttCheckpoint mqttCheckpoint = new MqttCheckpoint(routeId, Integer.parseInt(checkpoint));
                     String msg = new Gson().toJson(mqttCheckpoint);

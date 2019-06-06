@@ -8,10 +8,12 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.logicbeanzs.carrouteanimation.CarMoveAnim;
 import com.star_zero.sse.EventSource;
 
 import androidx.fragment.app.FragmentActivity;
@@ -70,13 +72,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (checkpoint != null) {
                     Log.d(TAG, checkpoint.toString());
                     LatLng latLng = new LatLng(checkpoint.latitude, checkpoint.longitude);
-                    Marker marker = map.addMarker(new MarkerOptions().position(latLng).title("Marker"));
+                    Marker marker = map.addMarker(new MarkerOptions()
+                            .position(latLng)
+                            .title("Marker")
+                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.car))
+                            .flat(true)
+                    );
 
                     if (lastMarker != null) {
+                        CarMoveAnim.startcarAnimation(marker, map, lastMarker.getPosition(),
+                                marker.getPosition(), 2000, new GoogleMap.CancelableCallback() {
+                            @Override
+                            public void onFinish() {
+
+                            }
+
+                            @Override
+                            public void onCancel() {
+
+                            }
+                        });
                         map.addPolyline(new PolylineOptions()
                                 .add(lastMarker.getPosition(), latLng)
                                 .width(5)
-                                .color(Color.argb(128, 0, 0, 0))
+                                .color(Color.argb(192, 0, 0, 0))
                         );
                         lastMarker.remove();
                     }
